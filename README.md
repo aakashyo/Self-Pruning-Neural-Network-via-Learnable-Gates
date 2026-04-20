@@ -152,11 +152,11 @@ python solution.py
 
 The experimental observations map the penalty strength `λ` against both validation accuracy and total parameter sparsity. Base execution yields the following hardware metrics:
 
-| Lambda (λ) | Test Accuracy | Sparsity (%) | Pruning Onset Epoch | Training Time (s) |
-| :------- | :------- | :------- | :------- | :------- |
-| `0.001` | ~ 80.2 % | ~ 0.0 % | N/A | ~ 946 |
-| `0.01` | ~ 80.3 % | ~ 20.7 % | Epoch 24 | ~ 933 |
-| `0.1` | ~ 80.1 % | ~ 51.5 % | Epoch 9 | ~ 929 |
+| Lambda ($\lambda$) | Test Acc | Val Acc | Overall Sparsity | Mean Gate (Overall) | Layer 1 Sparsity | Layer 2 Sparsity | Mean Gate L1 | Mean Gate L2 | % Gates Near 0 | % Gates Near 1 | Pruning Onset Epoch | Training Time (s) |
+| :------- | :------- | :------- | :------- | :------- | :------- | :------- | :------- | :------- | :------- | :------- | :------- | :------- |
+| `0.001` | 80.23% | 78.85% | 0.00% | 0.349 | 0.00% | 0.00% | 0.349 | 0.507 | 0.00% | 0.04% | N/A | 946.53 |
+| `0.01` | 80.34% | 78.72% | 20.69% | 0.257 | 20.74% | 1.95% | 0.256 | 0.380 | 0.00% | 0.04% | Epoch 24 | 933.48 |
+| `0.1` | 80.07% | 78.69% | 51.48% | 0.202 | 51.52% | 35.86% | 0.202 | 0.293 | 0.00% | 0.02% | Epoch 9 | 929.29 |
 
 ---
 
