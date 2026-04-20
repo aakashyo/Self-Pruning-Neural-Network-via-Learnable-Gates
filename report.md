@@ -17,7 +17,7 @@ Because the loss naturally balances against the gradient of the Cross-Entropy cl
 | `0.01`  (Medium)| 80.34 %         | 20.69 %            |
 | `0.1`   (High)  | 80.07 %         | 51.48 %            |
 
-As $\lambda$ increases, the penalty for keeping gates "open" aggressively overtakes the Cross-Entropy accuracy loss. This results in incredibly high sparsity (sometimes dropping over 89% of the computational payload) at the cost of noticeable dips in classification accuracy.
+As $\lambda$ increases, the penalty for keeping gates "open" aggressively overtakes the Cross-Entropy accuracy loss. This results in significant sparsity (up to ~51.5% at λ=0.1) while maintaining competitive accuracy. Notably, at λ=0.001, sparsity remains at 0.00% — this is expected behaviour, as the penalty is too weak to overcome the Cross-Entropy gradient, so all gates remain open. This confirms the model is sensitive and responsive to the lambda value rather than pruning indiscriminately.
 
 ## 3. Best Model Gate Distribution
 
