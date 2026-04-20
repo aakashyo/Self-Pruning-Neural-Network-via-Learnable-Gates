@@ -88,6 +88,8 @@ The repository prioritizes simplicity by condensing logical boundaries directly 
 
 ```text
 Trendence/
+├── data/
+│   └── README.md        # Placeholder documenting the auto-download dataset location
 ├── solution.py          # Core script: PrunableLinear, SelfPruningCNN, Utils, Plot generation, and execution 
 ├── test_lambda.py       # Isolated execution environment for basic lambda testing
 ├── requirements.txt     # Dependency locking
