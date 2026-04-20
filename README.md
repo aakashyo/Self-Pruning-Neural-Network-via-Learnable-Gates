@@ -18,11 +18,12 @@ An end-to-end framework demonstrating robust, dynamic neural network sparsity in
 8. [Key Results & Observations](#8-key-results--observations)
 9. [Generated Plots — What Each One Shows](#9-generated-plots--what-each-one-shows)
 10. [Mathematical Details](#10-mathematical-details)
-11. [Design Decisions & Justifications](#11-design-decisions--justifications)
-12. [Limitations & Future Work](#12-limitations--future-work)
-13. [Requirements](#13-requirements)
-14. [Context / Origin](#14-context--origin)
-15. [License](#15-license)
+11. [Development Journey — What We Tried & What Fixed It](#11-development-journey--what-we-tried--what-fixed-it)
+12. [Design Decisions & Justifications](#12-design-decisions--justifications)
+13. [Limitations & Future Work](#13-limitations--future-work)
+14. [Requirements](#14-requirements)
+15. [Context / Origin](#15-context--origin)
+16. [License](#16-license)
 
 ---
 
@@ -284,7 +285,35 @@ If the specific weight connection does not lower the active Cross-Entropy classi
 
 ---
 
-## 11. Design Decisions & Justifications
+## 11. Development Journey — What We Tried & What Fixed It
+
+### ❌ Initial Approach (What Went Wrong)
+
+In the first version of the training pipeline, all parameters — both the standard CNN weights and the learnable `gate_scores` — were passed into a **single Adam optimizer** with a global `weight_decay=1e-4`.
+
+This caused a critical problem: the L2 weight decay was being applied to the gate parameters alongside the regular weights. This created unintended downward pressure on the gate scores **on top of** the L1 sparsity penalty, making the gates collapse to 0 far too early in training. Symptoms included:
+
+- Gates freezing at 0.5 (no pruning happening at all), or
+- Gates collapsing to 0 within the first few epochs (premature pruning + accuracy crash)
+- The model was unable to find the right balance between sparsity and accuracy
+
+A higher learning rate compounded the issue — gate values would change too drastically between steps, causing unstable training and poor final accuracy.
+
+### ✅ What We Fixed (Final Approach)
+
+The solution was a **split-optimizer strategy**:
+
+1. **Separate optimizer for gate parameters** — `gate_scores` were given their own Adam optimizer with `weight_decay=0`. This completely eliminated the rogue L2 pressure on gates.
+2. **Consistent learning rates** — a unified learning rate was applied across both optimizers, preventing one group of parameters from dominating the other during gradient updates.
+3. **Lambda-scaled sparsity loss** — the L1 penalty was carefully tuned using three lambda values (`0.001`, `0.01`, `0.1`), allowing the network to learn at its own pace which weights to prune.
+4. **CosineAnnealingLR scheduler** — replaced step-based schedulers to give smoother convergence, especially important when gates are learning alongside weights.
+
+These changes allowed the gates to stabilize during early epochs and only begin pruning once the model had established good classification accuracy — resulting in up to **51.48% sparsity while maintaining ~80% test accuracy**.
+
+---
+
+## 12. Design Decisions & Justifications
+
 
 * **Initialization Configuration:** Kaiming normal initialization preserves gradient variance compatibility with the internal ReLU layers, preventing early dead gradients from stalling the self-pruning gates.
 * **CosineAnnealingLR Scheduler:** Preferred over discrete StepLR schedulers due to improved trajectory smoothness on non-convex training planes, allowing gates consistent learning momentum.
@@ -295,7 +324,7 @@ If the specific weight connection does not lower the active Cross-Entropy classi
 
 ---
 
-## 12. Limitations & Future Work
+## 13. Limitations & Future Work
 
 While the project efficiently executes sparsity induction, there are architectural limitations primarily defined by project scoping:
 
@@ -310,7 +339,7 @@ While the project efficiently executes sparsity induction, there are architectur
 
 ---
 
-## 13. Requirements
+## 14. Requirements
 * `python` >= 3.8
 * `torch` 
 * `torchvision`
@@ -323,12 +352,12 @@ While the project efficiently executes sparsity induction, there are architectur
 
 ---
 
-## 14. Context / Origin
+## 15. Context / Origin
 
 This system architecting was constructed explicitly as a structural case study submission for the *Tredence AI Engineering Internship 2025 cohort*. 
 
 ---
 
-## 15. License
+## 16. License
 
 Released under the standardized **MIT License**. Permission is granted to utilize, rewrite, merge, or distribute this model and structural code configuration with zero liability or functional warranty constraints.

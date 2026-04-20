@@ -34,3 +34,7 @@ During experimentation, an issue was observed where gate parameters were collaps
 ## 4. Conclusion
 
 This project demonstrates that neural networks can learn to prune themselves dynamically during training. By introducing learnable gates and applying an L1 penalty, the model successfully reduces unnecessary parameters while maintaining competitive accuracy. The results highlight the trade-off between sparsity and performance, controlled by the lambda parameter. This approach approximates hard pruning using a differentiable mechanism, enabling end-to-end training.
+
+## 5. Limitations & Future Work
+
+Sigmoid-based gating approximates pruning but does not enforce exact zero weights. Future work could explore hard-thresholding or L0-based methods.
