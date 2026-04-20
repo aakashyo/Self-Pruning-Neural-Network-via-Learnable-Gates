@@ -241,11 +241,46 @@ These final summary graphs compare the primary objectives across all three lambd
 
 ## 10. Mathematical Details
 
-The difference between L1 and L2 regularization is the core driving function of the `PrunableLinear` layer. 
+The self-pruning architecture is built entirely on the balance of gradient derivatives. Here are the core formulas governing the `PrunableLinear` layer.
 
-L2 (Ridge penalization) gradients dynamically scale with the raw parameter size. As the weight shrinks toward zero, the derivative pressure also shrinks toward zero. It is effectively asymptotic, rendering it mathematically incapable of completely destroying parameters down to an absolute `0.0`.
+### 1. The Gating Mechanism (Forward Pass)
+Every individual weight in the dense matrix $w_i$ is mapped 1:1 with an independent learnable parameter called a gate score, $s_i$. During the forward pass, this score is transformed into a final bounded gate value, $g_i$:
 
-L1 (Lasso penalization) executes a constant linear derivative regardless of the magnitude. The pressure to reach zero never eases. When this logic is mapped onto our Sigmoid parameters (`gate_scores`), the continuous linear drag pushes weak features rapidly down towards the base line, fully deactivating the multiplied weight. The `λ` controls the speed of this slope. For complete proofs, reference `report.md`.
+$$ g_i = \sigma(s_i \cdot T) = \frac{1}{1 + e^{-(s_i \cdot 5)}} $$
+
+* **$\sigma$ (Sigmoid):** Bounds the output strictly between $[0.0, 1.0]$.
+* **$T$ (Temperature = 5):** Hardens the slope of the sigmoid. Instead of floating near $0.5$, the $\times 5$ magnification forces gradient updates to instantly snap the gate towards true $0.0$ or true $1.0$, creating hard binary selection.
+
+The layer's final output computes the Hadamard (element-wise) product of the standard dense weights and the generated gates:
+
+$$ W_{pruned} = W_{dense} \odot G $$
+
+If the resulting gate $g_i$ reaches $0.0$, the weight $w_i$ is completely disconnected from the forward pass.
+
+### 2. The Sparsity Penalty (L1 Regularization)
+To force the network to destroy its own weights, we apply an **L1 Norm** over the gate values (normalized by layer volume $N$):
+
+$$ \mathcal{L}_{sparsity} = \frac{1}{N} \sum_{i=1}^{N} g_i $$
+
+**Why L1 instead of L2?**
+* **L2 (Ridge Penalization):** The mathematical derivative of $x^2$ is $2x$. As the gate variable shrinks toward zero, the subsequent penalizing gradient force also shrinks limitlessly. This asymptotic decay renders it mathematically incapable of ever closing a parameter down to exactly `0.0`.
+* **L1 (Lasso Penalization):** The derivative of $|x|$ mapped over the positive space is a constant $1$. The downward pressure mapped over the gate values never eases. It acts as a constant, heavy gravity forcefully hammering weak parameters continuously until they hit the absolute boundary at `0.0`.
+
+### 3. The Global Optimization Objective (Total Loss)
+The entire network evaluates using a composite loss function that maps the Cross-Entropy task accuracy in direct combat against the L1 Sparsity penalization scale:
+
+$$ \mathcal{L}_{total} = \mathcal{L}_{CE}(\hat{y}, y) + \lambda \cdot \mathcal{L}_{sparsity} $$
+
+* **$\mathcal{L}_{CE}$:** Punishes the network for getting CIFAR-10 image classifications wrong (demands crucial neural gates stay open to parse features).
+* **$\mathcal{L}_{sparsity}$:** Punishes the network for keeping gates open (demands gates close to conserve computation).
+* **$\lambda$:** The manual linear combination hyperparameter controlling the severity of the pruning force.
+
+### 4. Gradient Conflict (The "Self-Pruning" Engine)
+During back-propagation, the chain rule updates each specific gate score $s_i$ simultaneously via two completely hostile competing gradients:
+
+$$ \frac{\partial \mathcal{L}_{total}}{\partial s_i} = \frac{\partial \mathcal{L}_{CE}}{\partial s_i} + \lambda \frac{\partial \mathcal{L}_{sparsity}}{\partial s_i} $$
+
+If the specific weight connection does not lower the active Cross-Entropy classification error ($\mathcal{L}_{CE}$) faster than the constant drag of the $\lambda$ penalizer, the dominant negative gradient crushes the score until the Sigmoid closes. This creates an autonomous Darwinian selection inside the architecture: the network mathematically identifies, quarantines, and unloads dead features while fiercely isolating and defending only the heaviest neurological paths necessary for maximum accuracy.
 
 ---
 
