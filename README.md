@@ -111,8 +111,8 @@ We recommend launching this enclosed within a virtual environment.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/self-pruning-nn.git
-cd self-pruning-nn
+git clone https://github.com/aakashyo/Self-Pruning-Neural-Network-via-Learnable-Gates.git
+cd Self-Pruning-Neural-Network-via-Learnable-Gates
 
 # Create virtual environment
 python -m venv venv
