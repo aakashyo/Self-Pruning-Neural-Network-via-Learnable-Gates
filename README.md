@@ -121,7 +121,9 @@ venv\Scripts\activate           # Windows
 
 # Install dependencies
 pip install -r requirements.txt
-```
+
+**Note on Dataset Download:**
+You do not need to manually download or configure the CIFAR-10 dataset. The training pipeline uses `torchvision.datasets.CIFAR10(download=True)`, which will automatically fetch and extract the official dataset binaries natively into the `/data` directory upon execution.
 
 ---
 
